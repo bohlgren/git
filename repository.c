@@ -155,6 +155,48 @@ error:
 	return -1;
 }
 
+/*
+ * Initialize 'submodule' as the submodule given by 'path' in parent repository
+ * 'superproject'.
+ * Return 0 upon success and a non-zero value upon failure.
+ */
+int repo_submodule_init(struct repository *submodule,
+			struct repository *superproject,
+			const char *path)
+{
+	const struct submodule *sub;
+	struct strbuf submodule_path = STRBUF_INIT;
+	int ret = 0;
+
+	sub = submodule_from_cache(superproject, null_sha1, path);
+	if (!sub) {
+		ret = -1;
+		goto out;
+	}
+
+	strbuf_repo_worktree_path(&submodule_path, superproject, "%s", path);
+
+	if (repo_init(submodule, submodule_path.buf, submodule_path.buf)) {
+		strbuf_reset(&submodule_path);
+		strbuf_repo_git_path(&submodule_path, superproject,
+				     "modules/%s", sub->name);
+
+		if (repo_init(submodule, submodule_path.buf, NULL)) {
+			ret = -1;
+			goto out;
+		}
+	}
+
+	submodule->submodule_prefix = xstrfmt("%s%s/",
+					      superproject->submodule_prefix ?
+					      superproject->submodule_prefix :
+					      "", path);
+
+out:
+	strbuf_release(&submodule_path);
+	return ret;
+}
+
 void repo_clear(struct repository *repo)
 {
 	free(repo->gitdir);
@@ -169,6 +211,8 @@ void repo_clear(struct repository *repo)
 	repo->index_file = NULL;
 	free(repo->worktree);
 	repo->worktree = NULL;
+	free(repo->submodule_prefix);
+	repo->submodule_prefix = NULL;
 
 	if (repo->config) {
 		git_configset_clear(repo->config);
