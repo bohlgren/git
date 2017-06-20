@@ -1828,6 +1828,7 @@ struct object_info {
 	unsigned char *delta_base_sha1;
 	struct strbuf *typename;
 	void **contentp;
+	unsigned populate_u : 1;
 
 	/* Response */
 	enum {

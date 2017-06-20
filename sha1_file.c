@@ -3020,6 +3020,13 @@ int sha1_object_info_extended(const unsigned char *sha1, struct object_info *oi,
 		}
 	}
 
+	if (!oi->typep && !oi->sizep && !oi->disk_sizep &&
+	    !oi->delta_base_sha1 && !oi->typename && !oi->contentp &&
+	    !oi->populate_u) {
+		oi->whence = OI_PACKED;
+		return 0;
+	}
+
 	rtype = packed_object_info(e.p, e.offset, oi);
 	if (rtype < 0) {
 		mark_bad_packed_object(e.p, real);
@@ -3028,10 +3035,12 @@ int sha1_object_info_extended(const unsigned char *sha1, struct object_info *oi,
 		oi->whence = OI_DBCACHED;
 	} else {
 		oi->whence = OI_PACKED;
-		oi->u.packed.offset = e.offset;
-		oi->u.packed.pack = e.p;
-		oi->u.packed.is_delta = (rtype == OBJ_REF_DELTA ||
-					 rtype == OBJ_OFS_DELTA);
+		if (oi->populate_u) {
+			oi->u.packed.offset = e.offset;
+			oi->u.packed.pack = e.p;
+			oi->u.packed.is_delta = (rtype == OBJ_REF_DELTA ||
+						 rtype == OBJ_OFS_DELTA);
+		}
 	}
 
 	return 0;
