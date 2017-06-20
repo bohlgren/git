@@ -372,13 +372,20 @@ void report_linked_checkout_garbage(void)
 }
 
 static void adjust_git_path(const struct repository *repo,
+			    const struct worktree *wt,
 			    struct strbuf *buf, int git_dir_len)
 {
 	const char *base = buf->buf + git_dir_len;
 	if (is_dir_file(base, "info", "grafts"))
 		strbuf_splice(buf, 0, buf->len,
 			      repo->graft_file, strlen(repo->graft_file));
-	else if (!strcmp(base, "index"))
+	/*
+	 * Only try to replace the path '$gitdir/index' with the index file
+	 * recorded in the repository when not constructing a path for a
+	 * worktree.  This way we can retrieve the correct path to a particular
+	 * worktree's index file.
+	 */
+	else if (!wt && !strcmp(base, "index"))
 		strbuf_splice(buf, 0, buf->len,
 			      repo->index_file, strlen(repo->index_file));
 	else if (dir_prefix(base, "objects"))
@@ -411,7 +418,7 @@ static void do_git_path(const struct repository *repo,
 		strbuf_addch(buf, '/');
 	gitdir_len = buf->len;
 	strbuf_vaddf(buf, fmt, args);
-	adjust_git_path(repo, buf, gitdir_len);
+	adjust_git_path(repo, wt, buf, gitdir_len);
 	strbuf_cleanup_path(buf);
 }
 
