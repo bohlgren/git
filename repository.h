@@ -2,6 +2,7 @@
 #define REPOSITORY_H
 
 struct config_set;
+struct index_state;
 
 struct repository {
 	/* Environment */
@@ -31,6 +32,9 @@ struct repository {
 	 */
 	struct config_set *config;
 
+	/* Repository's in-memory index */
+	struct index_state *index;
+
 	/* Configurations */
 	/*
 	 * Bit used during initialization to indicate if repository state (like
@@ -52,5 +56,7 @@ extern void repo_set_gitdir(struct repository *repo, const char *path);
 extern void repo_set_worktree(struct repository *repo, const char *path);
 extern int repo_init(struct repository *repo, const char *gitdir, const char *worktree);
 extern void repo_clear(struct repository *repo);
+
+extern int repo_read_index(struct repository *repo);
 
 #endif /* REPOSITORY_H */
