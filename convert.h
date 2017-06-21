@@ -4,6 +4,8 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
+#include "string-list.h"
+
 struct index_state;
 
 enum safe_crlf {
@@ -34,6 +36,21 @@ enum eol {
 #endif
 };
 
+enum ce_delay_state {
+	CE_NO_DELAY = 0,
+	CE_CAN_DELAY = 1,
+	CE_DELAYED = 2,
+	CE_RETRY = 3
+};
+
+struct delayed_checkout {
+	enum ce_delay_state state;
+	/* List of filter drivers that signaled delayed blobs. */
+	struct string_list filters;
+	/* List of delayed blobs identified by their path. */
+	struct string_list paths;
+};
+
 extern enum eol core_eol;
 extern const char *get_cached_convert_stats_ascii(const struct index_state *istate,
 						  const char *path);
@@ -46,6 +63,10 @@ extern int convert_to_git(const struct index_state *istate,
 			  struct strbuf *dst, enum safe_crlf checksafe);
 extern int convert_to_working_tree(const char *path, const char *src,
 				   size_t len, struct strbuf *dst);
+extern int async_convert_to_working_tree(const char *path, const char *src,
+					 size_t len, struct strbuf *dst,
+					 void *dco);
+extern int async_query_available_blobs(const char *cmd, struct string_list *delayed_paths);
 extern int renormalize_buffer(const struct index_state *istate,
 			      const char *path, const char *src, size_t len,
 			      struct strbuf *dst);
